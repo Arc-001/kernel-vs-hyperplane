@@ -34,7 +34,8 @@ class TrainResult:
 
 def init_rbf_centers(rbf: RBFClassifier, X_np: np.ndarray, config: PipelineConfig):
     """Phase 3A — Initialize RBF centers via MiniBatchKMeans."""
-    kmeans = MiniBatchKMeans(n_clusters=config.rbf_n_centers, batch_size=1024, n_init=3)
+    n_centers = min(config.rbf_n_centers, len(X_np))
+    kmeans = MiniBatchKMeans(n_clusters=n_centers, batch_size=1024, n_init=3)
     kmeans.fit(X_np)
     centers = kmeans.cluster_centers_
 
