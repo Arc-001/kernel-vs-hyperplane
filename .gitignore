@@ -5,6 +5,13 @@ __pycache__/
 
 # C extensions
 *.so
+CLAUDE.md
+
+# Project artifacts
+outputs/
+data/generated/*.npz
+*.pt
+*.pth
 
 # Distribution / packaging
 .Python
