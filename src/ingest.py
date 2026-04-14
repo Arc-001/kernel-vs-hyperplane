@@ -1,7 +1,9 @@
 """Phase 1 — Data ingestion and preprocessing."""
 
+import json
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -36,7 +38,28 @@ def ingest(npz_path: str, config: PipelineConfig) -> DatasetBundle:
     y_noisy = data["y_noisy"]
     X_clean = data["X_clean"]
     y_clean = data["y_clean"]
-    metadata = data["metadata"].item() if data["metadata"].ndim == 0 else dict(data["metadata"])
+    # Metadata: embedded in .npz or sidecar .json
+    if "metadata" in data:
+        metadata = data["metadata"].item() if data["metadata"].ndim == 0 else dict(data["metadata"])
+    else:
+        json_path = Path(npz_path).with_suffix(".json")
+        if json_path.exists():
+            with open(json_path) as f:
+                raw = json.load(f)
+            metadata = {
+                "topology": raw.get("topology", "unknown"),
+                "noise_type": raw.get("feature_noise", {}).get("distribution", "unknown"),
+                "noise_scale": raw.get("feature_noise", {}).get("scale", 0.0),
+                "n_samples": raw.get("params", {}).get("n", len(X_noisy)),
+                "n_classes": len(np.unique(y_noisy)),
+                "filename": Path(npz_path).name,
+            }
+        else:
+            metadata = {
+                "topology": "unknown", "noise_type": "unknown", "noise_scale": 0.0,
+                "n_samples": len(X_noisy), "n_classes": len(np.unique(y_noisy)),
+                "filename": Path(npz_path).name,
+            }
     flip_mask = data["flip_mask"] if "flip_mask" in data else None
 
     d = X_noisy.shape[1]
